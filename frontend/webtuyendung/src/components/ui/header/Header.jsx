@@ -34,6 +34,9 @@ const Header = () => {
     {user.role === 'admin' && (
       <Link to="/admin/dashboard" className="header__link">Dashboard</Link>
     )}
+    {user?.role === 'doanhnghiep' && (
+  <Link to="/recruiter/dashboard" className="header__link">Dashboard</Link>
+)}
     <button onClick={handleLogout} className="header__link header__logout">
       Đăng xuất
     </button>

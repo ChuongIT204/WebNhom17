@@ -375,7 +375,7 @@ const filtered = users.filter(u => {
 
           {/* CONTROLS */}
           <div className="dash__controls">
-            <input className="dash__search" placeholder="🔍  Tìm theo tên hoặc email..."
+            <input className="dash__search" placeholder="Tìm theo tên hoặc email..."
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="dash__filter" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
               <option value="all">Tất cả vai trò</option>

@@ -6,6 +6,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const jobRoutes = require('./routes/jobs');
+const applyRoutes = require('./routes/apply');
 
 const app = express();
 
@@ -23,6 +26,9 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/apply', applyRoutes);
 
 // Health check
 app.get('/', (req, res) => {
@@ -33,6 +39,3 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
 });
-
-const adminRoutes = require('./routes/admin');
-app.use('/api/admin', adminRoutes);
