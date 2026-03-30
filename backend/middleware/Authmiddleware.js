@@ -1,7 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Middleware xác thực JWT
+/**
+ * Middleware xác thực JWT token
+ * Yêu cầu: Bearer token trong header Authorization
+ */
 const protect = async (req, res, next) => {
   let token;
 
@@ -16,6 +19,7 @@ const protect = async (req, res, next) => {
       req.user = await User.findById(decoded.id).select('-password');
       next();
     } catch (error) {
+      console.error('Lỗi xác thực token:', error.message);
       return res.status(401).json({
         success: false,
         message: 'Token không hợp lệ hoặc đã hết hạn',
@@ -31,7 +35,10 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Middleware kiểm tra role
+/**
+ * Middleware kiểm tra quyền (role) của người dùng
+ * @param {...string} roles - Các role được phép truy cập
+ */
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

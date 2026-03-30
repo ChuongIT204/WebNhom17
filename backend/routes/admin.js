@@ -10,7 +10,8 @@ router.get('/users', ...adminOnly, async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.json({ success: true, users });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi lấy danh sách người dùng:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });
@@ -30,7 +31,8 @@ router.post('/users', ...adminOnly, async (req, res) => {
     const userObj = user.toObject();
     delete userObj.password;
     res.status(201).json({ success: true, message: 'Thêm người dùng thành công', user: userObj });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi tạo người dùng:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });
@@ -49,7 +51,8 @@ router.put('/users/:id', ...adminOnly, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
 
     res.json({ success: true, message: 'Cập nhật thành công', user });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi cập nhật người dùng:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });
@@ -65,7 +68,8 @@ router.delete('/users/:id', ...adminOnly, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
 
     res.json({ success: true, message: 'Đã xóa người dùng' });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi xóa người dùng:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });

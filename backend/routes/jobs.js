@@ -8,7 +8,8 @@ router.get('/my', protect, authorizeRoles('doanhnghiep', 'admin'), async (req, r
   try {
     const jobs = await Job.find({ postedBy: req.user._id }).sort({ createdAt: -1 });
     res.json({ success: true, jobs });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi lấy danh sách bài của doanh nghiệp:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });
@@ -32,7 +33,8 @@ router.get('/', async (req, res) => {
       .skip((page - 1) * limit)
       .limit(Number(limit));
     res.json({ success: true, jobs, total, totalPages: Math.ceil(total / limit), currentPage: Number(page) });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi lấy danh sách công việc:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });
@@ -44,7 +46,8 @@ router.get('/:id', async (req, res) => {
     if (!job)
       return res.status(404).json({ success: false, message: 'Không tìm thấy bài tuyển dụng' });
     res.json({ success: true, job });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi lấy chi tiết công việc:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });
@@ -57,7 +60,8 @@ router.post('/', protect, authorizeRoles('doanhnghiep', 'admin'), async (req, re
       return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin bắt buộc' });
     const job = await Job.create({ title, company, companyLogo, salary, location, jobType, tag, description, requirements, benefits, workLocation, workTime, postedBy: req.user._id });
     res.status(201).json({ success: true, message: 'Đăng bài thành công!', job });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi tạo bài tuyển dụng:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });
@@ -68,7 +72,8 @@ router.put('/:id', protect, authorizeRoles('doanhnghiep', 'admin'), async (req, 
     const job = await Job.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!job) return res.status(404).json({ success: false, message: 'Không tìm thấy bài tuyển dụng' });
     res.json({ success: true, message: 'Cập nhật thành công', job });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi cập nhật bài tuyển dụng:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });
@@ -79,7 +84,8 @@ router.delete('/:id', protect, authorizeRoles('doanhnghiep', 'admin'), async (re
     const job = await Job.findByIdAndDelete(req.params.id);
     if (!job) return res.status(404).json({ success: false, message: 'Không tìm thấy bài tuyển dụng' });
     res.json({ success: true, message: 'Đã xóa bài tuyển dụng' });
-  } catch {
+  } catch (error) {
+    console.error('Lỗi xóa bài tuyển dụng:', error);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 });

@@ -1,60 +1,64 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
+const VALIDATION = {
+  MIN_PASSWORD_LENGTH: 6,
+  JWT_EXPIRY: '7d',
+};
+
 // Tạo JWT token
 const generateToken = (userId, role) => {
   return jwt.sign(
     { id: userId, role },
     process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: VALIDATION.JWT_EXPIRY }
   );
 };
 
-// ========================
-// ĐĂNG KÝ ỨNG VIÊN
-// POST /api/auth/jobseeker/register
-// ========================
-const registerJobSeeker = async (req, res) => {
+// Validate input
+const validateRegister = (name, email, password) => {
+  if (!name || !email || !password) {
+    return 'Vui lòng điền đầy đủ thông tin';
+  }
+  if (password.length < VALIDATION.MIN_PASSWORD_LENGTH) {
+    return `Mật khẩu phải có ít nhất ${VALIDATION.MIN_PASSWORD_LENGTH} ký tự`;
+  }
+  return null;
+};
+
+const validateLogin = (email, password) => {
+  return !email || !password ? 'Vui lòng nhập email và mật khẩu' : null;
+};
+
+// Generic register handler
+const handleRegister = async (req, res, role, roleLabel) => {
   try {
     const { name, email, password } = req.body;
+    const nameField = role === 'ungvien' ? 'name' : 'companyName';
+    const inputName = req.body[nameField];
 
-    // Validate input
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng điền đầy đủ thông tin',
-      });
+    const error = validateRegister(inputName, email, password);
+    if (error) {
+      return res.status(400).json({ success: false, message: error });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Mật khẩu phải có ít nhất 6 ký tự',
-      });
-    }
-
-    // Kiểm tra email đã tồn tại chưa
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'Email này đã được sử dụng',
-      });
+      return res.status(409).json({ success: false, message: 'Email này đã được sử dụng' });
     }
 
-    // Tạo user mới
     const user = await User.create({
-      name,
+      name: inputName,
       email,
       password,
-      role: 'ungvien',
+      role,
     });
 
     const token = generateToken(user._id, user.role);
 
     res.status(201).json({
       success: true,
-      message: 'Đăng ký ứng viên thành công! 🎉',
+      message: `Đăng ký ${roleLabel} thành công! 🎉`,
       token,
       user: {
         id: user._id,
@@ -64,7 +68,49 @@ const registerJobSeeker = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Lỗi đăng ký ứng viên:', error);
+    console.error(`Lỗi đăng ký ${roleLabel}:`, error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server, vui lòng thử lại sau',
+    });
+  }
+};
+
+// Generic login handler
+const handleLogin = async (req, res, role, roleLabel) => {
+  try {
+    const { email, password } = req.body;
+
+    const error = validateLogin(email, password);
+    if (error) {
+      return res.status(400).json({ success: false, message: error });
+    }
+
+    const user = await User.findOne({ email, role });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
+    }
+
+    const token = generateToken(user._id, user.role);
+
+    res.status(200).json({
+      success: true,
+      message: `Đăng nhập thành công! Chào mừng ${user.name} 👋`,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error(`Lỗi đăng nhập ${roleLabel}:`, error);
     res.status(500).json({
       success: false,
       message: 'Lỗi server, vui lòng thử lại sau',
@@ -73,169 +119,37 @@ const registerJobSeeker = async (req, res) => {
 };
 
 // ========================
-// ĐĂNG NHẬP ỨNG VIÊN
-// POST /api/auth/jobseeker/login
+// ỨNG VIÊN ROUTES
 // ========================
+
+const registerJobSeeker = async (req, res) => {
+  await handleRegister(req, res, 'ungvien', 'ứng viên');
+};
+
 const loginJobSeeker = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng nhập email và mật khẩu',
-      });
-    }
-
-    // Tìm user theo email và role
-    const user = await User.findOne({ email, role: 'ungvien' });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email hoặc mật khẩu không đúng',
-      });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email hoặc mật khẩu không đúng',
-      });
-    }
-
-    const token = generateToken(user._id, user.role);
-
-    res.status(200).json({
-      success: true,
-      message: `Đăng nhập thành công! Chào mừng ${user.name} 👋`,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error('Lỗi đăng nhập ứng viên:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server, vui lòng thử lại sau',
-    });
-  }
+  await handleLogin(req, res, 'ungvien', 'ứng viên');
 };
 
 // ========================
-// ĐĂNG KÝ NHÀ TUYỂN DỤNG
-// POST /api/auth/recruiter/register
+// NHÀ TUYỂN DỤNG ROUTES
 // ========================
+
 const registerRecruiter = async (req, res) => {
-  try {
-    const { companyName, email, password } = req.body;
+  // Map companyName to name field
+  req.body.name = req.body.companyName;
+  await handleRegister(req, res, 'doanhnghiep', 'nhà tuyển dụng');
+};
 
-    if (!companyName || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng điền đầy đủ thông tin',
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Mật khẩu phải có ít nhất 6 ký tự',
-      });
-    }
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'Email này đã được sử dụng',
-      });
-    }
-
-    const user = await User.create({
-      name: companyName,
-      email,
-      password,
-      role: 'doanhnghiep',
-    });
-
-    const token = generateToken(user._id, user.role);
-
-    res.status(201).json({
-      success: true,
-      message: 'Đăng ký nhà tuyển dụng thành công! 🎉',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error('Lỗi đăng ký nhà tuyển dụng:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server, vui lòng thử lại sau',
-    });
-  }
+const loginRecruiter = async (req, res) => {
+  await handleLogin(req, res, 'doanhnghiep', 'nhà tuyển dụng');
 };
 
 // ========================
-// ĐĂNG NHẬP NHÀ TUYỂN DỤNG
-// POST /api/auth/recruiter/login
+// ADMIN ROUTES
 // ========================
-const loginRecruiter = async (req, res) => {
-  try {
-    const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng nhập email và mật khẩu',
-      });
-    }
-
-    const user = await User.findOne({ email, role: 'doanhnghiep' });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email hoặc mật khẩu không đúng',
-      });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email hoặc mật khẩu không đúng',
-      });
-    }
-
-    const token = generateToken(user._id, user.role);
-
-    res.status(200).json({
-      success: true,
-      message: `Đăng nhập thành công! Chào mừng ${user.name} 👋`,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error('Lỗi đăng nhập nhà tuyển dụng:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server, vui lòng thử lại sau',
-    });
-  }
+const loginAdmin = async (req, res) => {
+  await handleLogin(req, res, 'admin', 'admin');
 };
 
 module.exports = {
@@ -243,4 +157,5 @@ module.exports = {
   loginJobSeeker,
   registerRecruiter,
   loginRecruiter,
+  loginAdmin,
 };

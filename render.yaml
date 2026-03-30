@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: webnhom17-backend
+    runtime: node
+    startCommand: npm start
+    buildCommand: npm install
+    root: backend
+    envVars:
+      - key: MONGO_URI
+        scope: run
+      - key: JWT_SECRET
+        scope: run
+      - key: CLIENT_URL
+        scope: run
+      - key: PORT
+        value: 5000

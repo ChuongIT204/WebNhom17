@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Mật khẩu là bắt buộc'],
       minlength: [6, 'Mật khẩu phải có ít nhất 6 ký tự'],
+      select: false, // Không trả về password khi query
     },
     role: {
       type: String,
@@ -30,15 +31,24 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password trước khi lưu
+/**
+ * Pre-save middleware: Hash password trước khi lưu
+ */
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-// So sánh password
+/**
+ * Instance method: So sánh mật khẩu
+ */
 userSchema.methods.comparePassword = async function (inputPassword) {
   return bcrypt.compare(inputPassword, this.password);
 };

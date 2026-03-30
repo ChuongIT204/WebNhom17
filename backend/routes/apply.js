@@ -128,7 +128,7 @@ router.post('/:jobId', upload.single('cv'), async (req, res) => {
     res.json({ success: true, message: 'Nộp hồ sơ thành công! Email xác nhận đã được gửi.' });
 
   } catch (error) {
-    console.error('Lỗi gửi email:', error);
+    console.error('Lỗi gửi email ứng tuyển:', error);
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ success: false, message: 'File CV phải nhỏ hơn 5MB' });
     }
