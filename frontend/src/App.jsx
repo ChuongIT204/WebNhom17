@@ -45,6 +45,9 @@ function App() {
 
             {/* 404 Not Found */}
             <Route path="*" element={<NotFound />} />
+
+            {/* Generic Register Route */}
+            <Route path="/register" element={<JobSeekerRegister />} />
           </Routes>
         </main>
         <Footer />

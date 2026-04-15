@@ -58,7 +58,7 @@ const handleRegister = async (req, res, role, roleLabel) => {
 
     res.status(201).json({
       success: true,
-      message: `Đăng ký ${roleLabel} thành công! 🎉`,
+      message: `Đăng ký ${roleLabel} thành công!`,
       token,
       user: {
         id: user._id,
@@ -86,7 +86,7 @@ const handleLogin = async (req, res, role, roleLabel) => {
       return res.status(400).json({ success: false, message: error });
     }
 
-    const user = await User.findOne({ email, role });
+    const user = await User.findOne({ email, role }).select('+password');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
     }
@@ -100,7 +100,7 @@ const handleLogin = async (req, res, role, roleLabel) => {
 
     res.status(200).json({
       success: true,
-      message: `Đăng nhập thành công! Chào mừng ${user.name} 👋`,
+      message: `Đăng nhập thành công! Chào mừng ${user.name}`,
       token,
       user: {
         id: user._id,
