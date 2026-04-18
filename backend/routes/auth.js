@@ -6,7 +6,7 @@ const {
   registerRecruiter,
   loginRecruiter,
   loginAdmin,
-} = require('../controllers/authController');
+} = require('../controllers/Authcontroller');
 
 // ===== ỨNG VIÊN =====
 router.post('/jobseeker/register', registerJobSeeker);

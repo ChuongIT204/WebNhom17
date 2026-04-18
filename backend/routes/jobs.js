@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Job = require('../models/Job');
-const { protect, authorizeRoles } = require('../middleware/authMiddleware');
+const { protect, authorizeRoles } = require('../middleware/Authmiddleware');
 
 // GET /api/jobs/my - Bài đăng của doanh nghiệp hiện tại (phải đặt TRƯỚC /:id)
 router.get('/my', protect, authorizeRoles('doanhnghiep', 'admin'), async (req, res) => {
